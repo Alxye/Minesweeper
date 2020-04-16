@@ -619,15 +619,14 @@ void Game::DrawButton()
 	ButtonRectRestart.height = ButtonHeight;
 	window.draw(sButtons);
 	//ButtonRectQuit;
-	
-		LeftCorner.x = detaX * 7 + ButtonWidth * 6;
-		sButtons.setTextureRect(IntRect(2 * ButtonWidth, 0, ButtonWidth, ButtonHeight));//读取按钮的纹理区域
-		sButtons.setPosition(LeftCorner.x, LeftCorner.y);							//	设置按钮的位置坐标
-		ButtonRectQuit.left = LeftCorner.x;											//记录按钮的位置区域
-		ButtonRectQuit.top = LeftCorner.y;
-		ButtonRectQuit.width = ButtonWidth;
-		ButtonRectQuit.height = ButtonHeight;
-		window.draw(sButtons);
+	LeftCorner.x = detaX * 7 + ButtonWidth * 6;
+	sButtons.setTextureRect(IntRect(6 * ButtonWidth, 0, ButtonWidth, ButtonHeight));//读取按钮的纹理区域
+	sButtons.setPosition(LeftCorner.x, LeftCorner.y);							//	设置按钮的位置坐标
+	ButtonRectQuit.left = LeftCorner.x;											//记录按钮的位置区域
+	ButtonRectQuit.top = LeftCorner.y;
+	ButtonRectQuit.width = ButtonWidth;
+	ButtonRectQuit.height = ButtonHeight;
+	window.draw(sButtons);
 	
 	
 }
