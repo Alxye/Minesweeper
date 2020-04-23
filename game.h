@@ -17,20 +17,20 @@
 #define  LVL3_NUM 99
 //枚举定义网格状态
 typedef enum GRIDSTATE {
-	ncNULL,				//空地
-	ncUNDOWN,		    //背景方块
-	ncMINE,				//地雷
-	ncONE,				//数字1
-	ncTWO,				//数字2
+	ncNULL,				//空地     0
+	ncUNDOWN,		    //背景方块 1
+	ncMINE,				//地雷     2
+	ncONE,				//数字1    3
+	ncTWO,				//数字2     
 	ncTHREE,			//数字3
 	ncFOUR,				//数字4
 	ncFIVE,				//数字5
 	ncSIX,				//数字6
 	ncSEVEN,			//数字7
-	ncEIGHT,			//数字8
-	ncFLAG,				//标记
-	ncQ,				//问号
-	ncX,				//备用
+	ncEIGHT,			//数字8    10
+	ncFLAG,				//标记     11
+	ncQ,				//问号     12
+	ncX,				//备用     13
 	ncBOMBING,			//爆炸的雷
 	ncUNFOUND			//未检测出来的雷
 };
@@ -46,7 +46,11 @@ class LEI
 public:
 	int mState;//雷的状态
 	int mStateBackUp;//备份状态
+	//bool float_state;  // whether mouse moved on
+	int backup_for_moveon;
+	bool onclick;  
 	bool isPress;//雷是否被按下
+	bool isPressBackUp;//雷是否被按下
 };
 
 class Game
@@ -66,9 +70,10 @@ public:
 	Vector2i mCornPoint;//游戏区域位置
 	int gridSize;//块大小（15）
 	int imgBGno, imgSkinNo;
+	bool testMode;
 	Texture tBackground, tTiles, tButtons, tNum, tTimer, tCounter, tGameOver;		//创建纹理对象
 	Sprite	sBackground, sTiles, sButtons, sNum, sTimer, sCounter, sGameOver;		//创建精灵对象
-	sf::IntRect ButtonRectEasy, ButtonRectNormal, ButtonRectHard, ButtonRectBG, ButtonRectSkin, ButtonRectRestart, ButtonRectQuit;
+	IntRect ButtonRectEasy, ButtonRectNormal, ButtonRectHard, ButtonRectBG, ButtonRectSkin, ButtonRectRestart, ButtonRectQuit;
 	//Font font;
 	//Text text;
 	SoundBuffer sbWin, sbBoom;
@@ -76,6 +81,8 @@ public:
 	Music bkMusic;
 	// A Clock starts counting as soon as it's created
 	sf::Clock gameClock, mouseClickTimer;
+	bool mouse_left_pressed;
+	bool mouse_right_pressed;
 	void Run();
 
 	void Initial();
@@ -90,10 +97,12 @@ public:
 	void RButtonDown(Vector2i mPoint);//------->鼠标右击
 	void LButtonDblClk(Vector2i mPoint);//------->鼠标左击一下
 	void LButtonDown(Vector2i mPoint);//------->鼠标左击两下
+	void MouseMove(Vector2i mPoint);
 
 	void NullClick(int j, int i);//查找空块
 
 	void Logic();
+	void Logic_Grid_officialize();
 	void isWin();
 	void unCover();
 

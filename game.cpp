@@ -10,6 +10,29 @@ LPCWSTR string_To_LPCWSTR(string _string) {
 	mbstowcs_s(&convertedChars, _LPCWSTR, origsize, _string.c_str(), _TRUNCATE);
 	return _LPCWSTR;
 }
+void cout_out() {
+
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+	cout << "yeyeyeyeyeyeyeyeyeyey?????????" << endl;
+}
 Game::Game()
 {
 	/*	if(w>= LVL3_WIDTH)
@@ -23,7 +46,7 @@ Game::Game()
 
 	Window_width = 860;
 	Window_height = 600;
-
+	testMode = false;
 	gameLvL = 3;
 	imgBGno = 1;
 	imgSkinNo = 1;
@@ -152,6 +175,7 @@ void Game::IniData()
 		{
 			mGameData[j][i].mState = ncUNDOWN;
 			mGameData[j][i].isPress = false;
+			mGameData[j][i].onclick = false;
 		}
 }
 void Game::MineSet(int Py, int Px)//布雷
@@ -159,17 +183,27 @@ void Game::MineSet(int Py, int Px)//布雷
 	int mCount, i, j, k, l;
 	mCount = 0;
 
-	srand(time(NULL));               //用当前系统时间作为随机数生成器的种子
-
+	//srand(time(NULL));               //用当前系统时间作为随机数生成器的种子
+	for (j = 0; j < stageHeight; j++)//所有块置为空且未点击
+		for (i = 0; i < stageWidth; i++)
+		{
+			mGameData[j][i].mStateBackUp = 0;
+			mGameData[j][i].backup_for_moveon = 0;
+		}
 	//随机布雷
 	do {//万一生成在同一个位置？？？？？？？？？？？
 		k = rand() % stageHeight;//生成随机数
 		l = rand() % stageWidth;
 		if (((k -Py)* (k - Py)+ (l - Px)* (l - Px))<=2)
+		//if (k>=Py-1&&k<=Py+1&&1>=Px-1&&1<=Px-1)
 			continue;//如果随机左边为当前第一次点击的位置，则重新再来
 		if (mGameData[k][l].mState == ncUNDOWN)
 		{
 			mGameData[k][l].mState = ncMINE;
+			mGameData[k][l].mStateBackUp = ncMINE;//备份状态
+			mCount++;
+		}
+		else if (mGameData[k][l].mState == ncFLAG || mGameData[k][l].mState == ncQ) {
 			mGameData[k][l].mStateBackUp = ncMINE;//备份状态
 			mCount++;
 		}
@@ -179,7 +213,7 @@ void Game::MineSet(int Py, int Px)//布雷
 	for (i = 0; i < stageHeight; i++)
 		for (j = 0; j < stageWidth; j++)
 		{
-			if (mGameData[i][j].mState != ncMINE)
+			if (mGameData[i][j].mState != ncMINE &&!(mGameData[i][j].mStateBackUp == ncMINE&& mGameData[i][j].mState == ncQ || mGameData[i][j].mState == ncFLAG))
 			{
 				mCount = 0;
 				for (k = i - 1; k < i + 2; k++)
@@ -189,7 +223,11 @@ void Game::MineSet(int Py, int Px)//布雷
 							if (mGameData[k][l].mState == ncMINE)
 								mCount++;
 						}//计算(i,j)周围雷的数目
-
+				if (mGameData[i][j].mState == ncFLAG || mGameData[i][j].mState == ncQ) {
+					int temp = mGameData[i][j].mState;
+					mGameData[i][j].mState = mGameData[i][j].mStateBackUp;
+					mGameData[i][j].mStateBackUp = temp;
+				}
 				switch (mCount)//保存状态
 				{
 				case 0:
@@ -220,6 +258,11 @@ void Game::MineSet(int Py, int Px)//布雷
 					mGameData[i][j].mState = ncEIGHT;
 					break;
 				}
+				if (mGameData[i][j].mStateBackUp == ncFLAG || mGameData[i][j].mStateBackUp == ncQ) {
+					int temp = mGameData[i][j].mState;
+					mGameData[i][j].mState = mGameData[i][j].mStateBackUp;
+					mGameData[i][j].mStateBackUp = temp;
+				}
 			}
 		}
 }
@@ -244,17 +287,21 @@ void Game::Input()
 		}
 		if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left)
 		{
+			mouse_left_pressed = true;
 			if (isGameOverState == ncNO)
 			{
-				if (mouseClickTimer.getElapsedTime().asMilliseconds() > 500)
+				if (mouseClickTimer.getElapsedTime().asMilliseconds() > 500) {
 					LButtonDown(Mouse::getPosition(window));	//当两次点击的间隔大于600毫秒，则判定为鼠标单击
-				else
+				}
+				else {
 					LButtonDblClk(Mouse::getPosition(window));	//当两次点击的间隔小于600毫秒，则判定为鼠标双击
+				}
 				//std::cout << "Elapsed time since previous frame(microseconds): " << clock.getElapsedTime().asMilliseconds() << std::endl;//
 			}
 		}
 		if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left)
 		{
+			mouse_left_pressed = false;
 			if (isGameOverState == ncNO)
 			{
 				mouseClickTimer.restart();//SFML的clock类就两个函数getElapsedTime()和restart()，超简单！
@@ -264,16 +311,18 @@ void Game::Input()
 					if (ButtonRectEasy.contains(event.mouseButton.x, event.mouseButton.y))
 					{
 						gameLvL = 1;
+						Initial();//及时刷新舞台
 					}
 					if (ButtonRectNormal.contains(event.mouseButton.x, event.mouseButton.y))
 					{
 						gameLvL = 2;
+						Initial();//及时刷新舞台
 					}
 					if (ButtonRectHard.contains(event.mouseButton.x, event.mouseButton.y))
 					{
 						gameLvL = 3;
+						Initial();//及时刷新舞台
 					}
-					Initial();//及时刷新舞台
 				}
 
 			}
@@ -302,21 +351,74 @@ void Game::Input()
 				gameQuit = true;
 			}
 
+
 		}
 		if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Right)
 		{
+			mouse_right_pressed = true;
 			if (isGameOverState == ncNO)
 				RButtonDown(Mouse::getPosition(window));//------->鼠标右击
-			//std::cout << "the right button was pressed" << std::endl;
-			//std::cout << "mouseButton.x: " << event.mouseButton.x << std::endl;
-			//std::cout << "mouseButton.y: " << event.mouseButton.y << std::endl;
-		}		
+		}
+		if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Right)
+		{
+			mouse_right_pressed = false;
+		}
+		// about mouse move
+		if (event.type == sf::Event::MouseMoved)
+		{
+			MouseMove(Mouse::getPosition(window));
+		}
+		if (event.type == sf::Event::KeyReleased && event.key.code == Keyboard::T) {
+			if (testMode == false) {
+				testMode = true;
+				for (int i = 0; i < stageHeight; i++) {
+					for (int j = 0; j < stageWidth; j++) {
+						mGameData[i][j].isPressBackUp = mGameData[i][j].isPress;
+						mGameData[i][j].isPress = true;
+					}
+				}
+			}
+			else {
+				testMode = false;
+				for (int i = 0; i < stageHeight; i++) {
+					for (int j = 0; j < stageWidth; j++) {
+						mGameData[i][j].isPress = mGameData[i][j].isPressBackUp;
+					}
+				}
+			}
+		}
 	}
-	//if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
-	//{
-		// left click...
-	//}
+}
+void Game::MouseMove(Vector2i mPoint)//------->mouse move
+{
+	int i, j;
+	i = (mPoint.x - mCornPoint.x) / gridSize;
+	j = (mPoint.y - mCornPoint.y) / gridSize;
+	cout << i << "&&" << j << endl;
 
+	// change state out of i&j in array
+	for (int line = 0; line < stageHeight; line++)//所有块置为空且未点击
+	{
+		for (int row = 0; row < stageWidth; row++)
+		{
+			if (mGameData[line][row].mState==ncX)
+			{
+				mGameData[line][row].mState = mGameData[line][row].backup_for_moveon;
+			}
+		}
+	}
+	if (i >= 0 && i < stageWidth && j >= 0 && j < stageHeight)   //如果鼠标悬浮实在范围内
+	{
+		cout << "mGameData["<<j<<"]["<<i<<"].mState===="<< mGameData[j][i].mState << endl;
+		cout << "mGameData["<<j<<"]["<<i<<"].mStateBackUp===="<< mGameData[j][i].mStateBackUp << endl;
+		if (mGameData[j][i].isPress == false&& mGameData[j][i].mState!=ncX)
+		{
+			cout << "yes!" << endl;
+			mGameData[j][i].backup_for_moveon = mGameData[j][i].mState;
+			mGameData[j][i].mState = ncX;
+			
+		}
+	}
 }
 void Game::RButtonDown(Vector2i mPoint)//------->鼠标右击
 {
@@ -345,59 +447,24 @@ void Game::RButtonDown(Vector2i mPoint)//------->鼠标右击
 				mGameData[j][i].isPress = false;
 				mGameData[j][i].mState = mGameData[j][i].mStateBackUp;
 			}
-		}
-	}
-}
-void Game::LButtonDblClk(Vector2i mPoint)//------->鼠标左击2下
-{
-	int i, j, k, l, lvl;
+			else if (mouse_left_pressed && mouse_right_pressed) {
 
-	i = (mPoint.x - mCornPoint.x) / gridSize;
-	j = (mPoint.y - mCornPoint.y) / gridSize;
-
-	if (i >= 0 && i < stageWidth && j >= 0 && j < stageHeight)//如果点击是在范围内
-	{
-		if (mGameData[j][i].isPress == true)//如果已被点击
-		{
-			if (mGameData[j][i].mState != ncFLAG)//如果当前块不是旗子
-				for (k = j - 1; k < j + 2; k++)
-					for (l = i - 1; l < i + 2; l++)//遍历周围8个格子
-						if (k >= 0 && k < stageHeight && l >= 0 && l < stageWidth)
+				for (int k = j - 1; k < j + 2; k++)
+					for (int l = i - 1; l < i + 2; l++)//遍历周围8个格子{
+					{
+						if (k >= 0 && k < stageHeight && l >= 0 && l < stageWidth && !(k == j && l == i) && mGameData[k][l].isPress == false)
 						{
-							if (mGameData[k][l].mState == ncFLAG)//如果状态是旗子
-							{
-								if (mGameData[k][l].mStateBackUp != ncMINE) //如果原先状态不是雷
-								{
-									//gameOver = true;
-									//MessageBox(NULL, TEXT("Game Over!"), NULL, MB_ICONINFORMATION | MB_YESNO);
-									isGameOverState = ncLOSE;
-									isGameBegin = false;
-									//mGameData[j][i].mState = ncBOMBING;
-									unCover();
-								}
 
-							}
-							else {//如果状态不是旗子
-								if (mGameData[k][l].isPress == false)
-								{
-									mGameData[k][l].isPress = true;
-									if (mGameData[k][l].mState == ncMINE)//如果为雷
-									{
-										//gameOver = true;
-										//MessageBox(NULL, TEXT("Game Over!"), NULL, MB_ICONWARNING | MB_YESNO);
-										isGameBegin = false;
-										isGameOverState = ncLOSE;
-										mGameData[k][l].mState = ncBOMBING;
-										unCover();
-									}
-									if (mGameData[k][l].mState == ncNULL)//如果为空继续查找空块						
-										NullClick(k, l);
-								}
-							}
+							mGameData[k][l].backup_for_moveon = mGameData[k][l].mState;
+							mGameData[k][l].mState = ncNULL;
+							mGameData[k][l].onclick = true;
 						}
+					}
+			}
 		}
 	}
 }
+
 void Game::LButtonDown(Vector2i mPoint)//------->鼠标左击1下
 {
 	int i, j;
@@ -413,10 +480,11 @@ void Game::LButtonDown(Vector2i mPoint)//------->鼠标左击1下
 			MineSet(j, i);//点击之后再随机布雷
 		}
 		if (mGameData[j][i].mState != ncFLAG)//如果状态不是旗子
+		{
 			if (mGameData[j][i].isPress == false)
 			{
 				mGameData[j][i].isPress = true;//当前块被点击
-				if (mGameData[j][i].mState == ncMINE)//如果为雷
+				if (mGameData[j][i].mState == ncMINE || mGameData[j][i].mStateBackUp == ncMINE)//如果为雷
 				{
 					//gameOver = true;
 					//MessageBox(NULL, TEXT("Game Over!"), NULL, MB_ICONWARNING | MB_YESNO);
@@ -426,12 +494,91 @@ void Game::LButtonDown(Vector2i mPoint)//------->鼠标左击1下
 					unCover();
 				}
 			}
+			else if (mouse_left_pressed && mouse_right_pressed) {
+
+				for (int k = j - 1; k < j + 2; k++)
+					for (int l = i - 1; l < i + 2; l++)//遍历周围8个格子{
+					{
+						if (k >= 0 && k < stageHeight && l >= 0 && l < stageWidth &&!( k==j && l==i)&& mGameData[k][l].isPress==false)
+						{
+
+							mGameData[k][l].backup_for_moveon = mGameData[k][l].mState;
+							mGameData[k][l].mState = ncNULL;
+							mGameData[k][l].onclick = true;
+						}
+					}
+			}
+		}
 
 		if (mGameData[j][i].mState == ncNULL)//如果当前点击的块的状态为无
 			NullClick(j, i);//查找未被点击的空块
 	}
 }
+void Game::LButtonDblClk(Vector2i mPoint)//------->鼠标左击2下
+{
+	int i, j, k, l, lvl;
 
+	i = (mPoint.x - mCornPoint.x) / gridSize;
+	j = (mPoint.y - mCornPoint.y) / gridSize;
+
+	if (i >= 0 && i < stageWidth && j >= 0 && j < stageHeight)//如果点击是在范围内
+	{
+		if (mGameData[j][i].isPress == true)//如果已被点击
+		{
+			int flag_count=0, mine_count=0;
+			for (k = j - 1; k < j + 2; k++)
+				for (l = i - 1; l < i + 2; l++)//遍历周围8个格子
+					if (k >= 0 && k < stageHeight && l >= 0 && l < stageWidth &&!(k == j && l == i) && (mGameData[k][l].isPress==false|| mGameData[k][l].mState==ncFLAG))
+					{
+						if (mGameData[k][l].mState == ncFLAG) flag_count++;
+						if (mGameData[k][l].backup_for_moveon == ncMINE) mine_count++;
+						if (mGameData[k][l].mState == ncMINE) mine_count++;
+					}
+			cout << mine_count << "||" << flag_count << endl;
+			if (mine_count <= flag_count) {
+				if (mGameData[j][i].mState != ncFLAG)//如果当前块不是旗子
+					for (k = j - 1; k < j + 2; k++)
+						for (l = i - 1; l < i + 2; l++)//遍历周围8个格子
+							if (k >= 0 && k < stageHeight && l >= 0 && l < stageWidth)
+							{
+								if (mGameData[k][l].mState == ncFLAG)//如果状态是旗子
+								{
+									if (mGameData[k][l].backup_for_moveon != ncMINE) //如果原先状态不是雷
+									{
+										//gameOver = true;
+										//MessageBox(NULL, TEXT("Game Over!"), NULL, MB_ICONINFORMATION | MB_YESNO);
+										//cout << "bug is here???????" << endl;
+										//cout << "mGameData[" << k << "][" << l << "].mStateBackUp" << mGameData[k][l].mStateBackUp << endl;;
+										isGameOverState = ncLOSE;
+										isGameBegin = false;
+										//mGameData[j][i].mState = ncBOMBING;
+										unCover();
+									}
+
+								}
+								else {//如果状态不是旗子
+									if (mGameData[k][l].isPress == false)
+									{
+										mGameData[k][l].isPress = true;
+										if (mGameData[k][l].mState == ncMINE)//如果为雷
+										{
+											//gameOver = true;
+											//MessageBox(NULL, TEXT("Game Over!"), NULL, MB_ICONWARNING | MB_YESNO);
+											isGameBegin = false;
+											isGameOverState = ncLOSE;
+											mGameData[k][l].mState = ncBOMBING;
+											unCover();
+										}
+										if (mGameData[k][l].mState == ncNULL)//如果为空继续查找空块						
+											NullClick(k, l);
+									}
+								}
+							}
+
+			}
+		}
+	}
+}
 void Game::NullClick(int j, int i)//查找空块
 {
 	int k, l;
@@ -451,7 +598,22 @@ void Game::NullClick(int j, int i)//查找空块
 
 void Game::Logic()
 {
+	Logic_Grid_officialize();
 	isWin();
+}
+void Game::Logic_Grid_officialize() {
+	if ((mouse_right_pressed==false)||(mouse_left_pressed==false))
+	{
+		int i, j;
+		for (j = 0; j < stageHeight; j++)//所有块置为空且未点击
+			for (i = 0; i < stageWidth; i++)
+			{
+				if ((mGameData[j][i].isPress == false) && (mGameData[j][i].onclick == true)) {
+					mGameData[j][i].onclick = false;
+					mGameData[j][i].mState = mGameData[j][i].backup_for_moveon;
+				}
+			}
+	}
 }
 void Game::unCover()
 {
@@ -534,22 +696,26 @@ void Game::DrawGrid()
 				}
 				else
 				{
-					sTiles.setTextureRect(IntRect(ncUNDOWN * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
-					sTiles.setPosition(mCornPoint.x + i * GRIDSIZE, mCornPoint.y + j * GRIDSIZE);
+					if (mGameData[j][i].mState==ncX)  // draw bright grid
+					{
+						sTiles.setTextureRect(IntRect(ncX * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
+						sTiles.setPosition(mCornPoint.x + i * GRIDSIZE, mCornPoint.y + j * GRIDSIZE);
+					}
+					else if (mGameData[j][i].onclick == true && mouse_left_pressed && mouse_right_pressed)
+					{
+						sTiles.setTextureRect(IntRect(ncNULL * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
+						sTiles.setPosition(mCornPoint.x + i * GRIDSIZE, mCornPoint.y + j * GRIDSIZE);
+					}
+					else // draw back grid
+					{
+						sTiles.setTextureRect(IntRect(ncUNDOWN * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
+						sTiles.setPosition(mCornPoint.x + i * GRIDSIZE, mCornPoint.y + j * GRIDSIZE);
+					}
 				}
 			}
 			if (change_time_number == counter[i][j]) {
-				if (mGameData[j][i].isPress == true)
-				{
-					sTiles.setTextureRect(IntRect(mGameData[j][i].mState * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
-					sTiles.setPosition(mCornPoint.x + i * GRIDSIZE, mCornPoint.y + j * GRIDSIZE);
-				}
-				else
-				{
-					sTiles.setTextureRect(IntRect(ncUNDOWN * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
-					//sTiles.setTextureRect(IntRect(mGameData[j][i].mState * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
-					sTiles.setPosition(mCornPoint.x + i * GRIDSIZE, mCornPoint.y + j * GRIDSIZE);
-				}
+				sTiles.setTextureRect(IntRect(ncUNDOWN * GRIDSIZE, 0, GRIDSIZE, GRIDSIZE));
+				sTiles.setPosition(mCornPoint.x + i * GRIDSIZE, mCornPoint.y + j * GRIDSIZE);
 			}
 			window.draw(sTiles);
 		}
@@ -642,7 +808,7 @@ void Game::DrawScore()
 	LeftCorner.x = LeftCorner.x + sCounter.getLocalBounds().width - NumSize;
 	LeftCorner.y = LeftCorner.y + sCounter.getLocalBounds().height * 0.5 - NumSize * 0.5;
 
-	int mScore = mMineNum - mFlagCalc;
+	int mScore = abs(mMineNum - mFlagCalc);
 	//绘制个位数的数字
 	int a = mScore % 10;
 	sNum.setTextureRect(IntRect(a * NumSize, 0, NumSize, NumSize));//纹理上取数字纹理
@@ -652,14 +818,16 @@ void Game::DrawScore()
 	mScore = mScore / 10;
 	a = mScore % 10;
 	LeftCorner.x = LeftCorner.x - NumSize;
-	sNum.setTextureRect(IntRect(a * NumSize, 0, NumSize, NumSize));//纹理上取数字纹理
+	if (mMineNum - mFlagCalc >= 0 || a != 0) sNum.setTextureRect(IntRect(a * NumSize, 0, NumSize, NumSize));//纹理上取数字纹理
+	else	sNum.setTextureRect(IntRect(10 * NumSize, 0, NumSize, NumSize));//纹理上取数字纹理
 	sNum.setPosition(LeftCorner.x, LeftCorner.y);//摆好位置
 	window.draw(sNum);
 	//绘制百位数的数字
 	mScore = mScore / 10;
 	a = mScore % 10;
 	LeftCorner.x = LeftCorner.x - NumSize;
-	sNum.setTextureRect(IntRect(a * NumSize, 0, NumSize, NumSize));//纹理上取数字纹理
+	if (mMineNum - mFlagCalc >= 0 || a != 0)	sNum.setTextureRect(IntRect(a * NumSize, 0, NumSize, NumSize));//纹理上取数字纹理
+	else	sNum.setTextureRect(IntRect(10 * NumSize, 0, NumSize, NumSize));//纹理上取数字纹理
 	sNum.setPosition(LeftCorner.x, LeftCorner.y);//摆好位置
 	window.draw(sNum);
 }
